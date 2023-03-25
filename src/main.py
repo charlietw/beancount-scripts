@@ -6,9 +6,6 @@ from pandas import DataFrame
 #     # Load the dataset into a pandas DataFrame
 #     df = pd.read_csv(filename)
 
-#     # Convert the 'month' and 'year' columns to a datetime format
-#     df["date"] = pd.to_datetime(df["month"].astype(str) + " " + df["year"].astype(str))
-
 #     # Create a new DataFrame with all possible month-year combinations
 #     min_date = "2020-01-01"
 #     max_date = df["date"].max()
@@ -23,7 +20,7 @@ from pandas import DataFrame
 
 #     df: DataFrame = df.drop(columns=["month", "year", "date_y"])
 
-#     # Remove £ sign
+#     # Remove GBP
 #     df = remove_currency_symbol(df, "sum_position")
 
 
