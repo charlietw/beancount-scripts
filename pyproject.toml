@@ -11,6 +11,7 @@ python = "^3.11"
 pandas = "^1.5.3"
 pytest = "^7.2.2"
 black = "^23.1.0"
+beancount = "^2.3.5"
 
 
 [build-system]
