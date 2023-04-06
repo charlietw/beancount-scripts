@@ -9,7 +9,7 @@ def fix_currency_column(series: Series) -> Series:
     return pd.to_numeric(series.str.replace("GBP", "").str.rstrip())
 
 
-def create_month_year_dataframe(min_date, max_date) -> DataFrame:
+def create_month_year_dataframe(min_date: str, max_date: str) -> DataFrame:
     """
     Create a new DataFrame with all possible month-year combinations
     between two dates
@@ -28,10 +28,11 @@ def convert_to_datetime(df: DataFrame) -> DataFrame:
     return df.drop(columns=["month", "year"])
 
 
-def pad_dates(df: DataFrame, dates_df: DataFrame) -> DataFrame:
+def pad_dates(df: DataFrame, min_date: str, max_date: str) -> DataFrame:
     """
     Add extra rows for dates when there is no data
     """
+    dates_df: DataFrame = create_month_year_dataframe(min_date, max_date)
     return pd.merge(dates_df, df, on=["date"], how="left")
 
 
@@ -41,3 +42,10 @@ def fill_data_zero(series: Series) -> Series:
     """
     # df['sum_position'].fillna(method='ffill', inplace=True)
     return series.fillna(0)
+
+
+def group_by_month(df: DataFrame, column_name: str) -> Series:
+    """
+    Takes a dataframe with 'sum_position' and groups it by date, i.e. removes the account
+    """
+    return df.groupby(df['date'])[column_name].sum()

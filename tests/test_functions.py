@@ -45,12 +45,12 @@ def dates_df() -> DataFrame:
 
 @pytest.fixture
 def expenses_datetime_df_merged(
-    expenses_datetime_df: DataFrame, dates_df: DataFrame
+    expenses_datetime_df: DataFrame
 ) -> DataFrame:
     """
     Create a mock dataframe with dates converted to datetime merged with the date df
     """
-    return functions.pad_dates(expenses_datetime_df, dates_df)
+    return functions.pad_dates(expenses_datetime_df, "2020-01-01", "2022-12-01")
 
 
 def test_fix_currency_column(expenses_df: DataFrame) -> None:
@@ -86,11 +86,11 @@ def test_convert_to_datetime(expenses_df: DataFrame) -> None:
     assert list(df.columns.values) == ["sum_position", "account", "date"]
 
 
-def test_pad_dates(expenses_datetime_df: DataFrame, dates_df: DataFrame) -> None:
+def test_pad_dates(expenses_datetime_df: DataFrame) -> None:
     """
     Pads dates and asserts that the resulting length is 36
     """
-    expenses_datetime_df = functions.pad_dates(expenses_datetime_df, dates_df)
+    expenses_datetime_df = functions.pad_dates(expenses_datetime_df, "2020-01-01", "2022-12-01")
     expected: int = 36
     actual: int = len(expenses_datetime_df)
     assert expected == actual
