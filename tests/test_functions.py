@@ -44,9 +44,7 @@ def dates_df() -> DataFrame:
 
 
 @pytest.fixture
-def expenses_datetime_df_merged(
-    expenses_datetime_df: DataFrame
-) -> DataFrame:
+def expenses_datetime_df_merged(expenses_datetime_df: DataFrame) -> DataFrame:
     """
     Create a mock dataframe with dates converted to datetime merged with the date df
     """
@@ -90,7 +88,9 @@ def test_pad_dates(expenses_datetime_df: DataFrame) -> None:
     """
     Pads dates and asserts that the resulting length is 36
     """
-    expenses_datetime_df = functions.pad_dates(expenses_datetime_df, "2020-01-01", "2022-12-01")
+    expenses_datetime_df = functions.pad_dates(
+        expenses_datetime_df, "2020-01-01", "2022-12-01"
+    )
     expected: int = 36
     actual: int = len(expenses_datetime_df)
     assert expected == actual
