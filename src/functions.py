@@ -48,11 +48,13 @@ def fill_data_zero(series: Series) -> Series:
     return series.fillna(0)
 
 
-def group_by_month(df: DataFrame, column_name: str) -> Series:
+def group_by_month(df: DataFrame, column_name: str) -> DataFrame:
     """
     Takes a dataframe with 'sum_position' and groups it by date, i.e. removes the account
     """
-    return df.groupby(df["date"])[column_name].sum()
+    grouped = df.groupby(df["date"])[column_name].sum()
+    grouped = grouped.reset_index()
+    return grouped
 
 
 def construct_account_query(accounts: list[str]) -> str:
@@ -69,20 +71,81 @@ def construct_account_query(accounts: list[str]) -> str:
     return query
 
 
+def construct_balance_query(accounts: list[str]) -> str:
+    """
+    Takes 'accounts' and constructs the string required for bean-query
+    """
+    query = "SELECT MONTH(date) AS month, YEAR(date) as year, last(balance), account "
+    for i, account in enumerate(accounts):
+        if i == 0:  # First account has to be WHERE
+            query += f"WHERE account ~ '{account}' "
+        else:  # Rest have to be OR
+            query += f"OR account ~ '{account}' "
+    query += "GROUP BY year, month, account"
+    return query
+
+
 def account_query_to_df(accounts: list[str]) -> pd.DataFrame:
     """
-    Takes 'accounts' and returns a DataFrame containing the result
-    of calling 'bean-query', padding dates
+    Takes a list of 'accounts' and returns a DataFrame containing the result
+    of calling 'bean-query', padding dates.
     """
     query: str = construct_account_query(accounts)
+    currency_column = "sum_position"
     query_result: str = bean_query(query)
     query_result_df: pd.DataFrame = pd.read_csv(StringIO(query_result))
-    query_result_df["sum_position"] = fix_currency_column(
-        query_result_df["sum_position"]
+    # Fix £ characters and make it a number
+    query_result_df[currency_column] = fix_currency_column(
+        query_result_df[currency_column]
     )
     query_result_df = convert_to_datetime(query_result_df)
-    max_date: str = query_result_df["date"].max()
+    max_date: str = "2024-01-01"
     return pad_dates(query_result_df, "2020-01-01", max_date)
+
+
+def pad_balance(query_result_df: DataFrame) -> pd.DataFrame:
+    """
+    Takes an account and pads out the balance so that there is an entry
+    for each month
+    """
+    # Convert the 'date' column to a datetime index
+    max_date: str = "2024-01-01"
+
+    # Add rows for missing historic data
+    query_result_df = pad_dates(query_result_df, "2020-01-01", max_date)
+    query_result_df.set_index('date', inplace=True)
+
+    # Resample the DataFrame to fill in missing months and use forward fill to fill NaN values
+    query_result_df['last_balance'] = query_result_df['last_balance'].ffill()
+    query_result_df['account'] = query_result_df['account'].bfill()
+    query_result_df['account'] = query_result_df['account'].ffill()
+    query_result_df = query_result_df.fillna(0)
+    # Reset the index to match the original format
+    query_result_df.reset_index(inplace=True)
+    return query_result_df
+
+
+def balance_query_to_df(
+        accounts: list[str]) -> pd.DataFrame:
+    """
+    Takes a list of 'accounts' and returns a DataFrame containing the result
+    of calling 'bean-query', padding dates.
+    """
+    query: str = construct_balance_query(accounts)
+    currency_column = "last_balance"
+    query_result: str = bean_query(query)
+    query_result_df: pd.DataFrame = pd.read_csv(StringIO(query_result))
+
+    # Fix £ characters and make it a number
+    query_result_df[currency_column] = fix_currency_column(
+        query_result_df[currency_column]
+    )
+    query_result_df = convert_to_datetime(query_result_df)
+    query_result_df = pad_balance(query_result_df)
+    query_result_df.rename(
+        columns={"last_balance": "balance"},
+        inplace=True)
+    return query_result_df
 
 
 def bean_query(query) -> str:
@@ -102,7 +165,7 @@ def bean_query(query) -> str:
     return proc.stdout.decode("utf-8")
 
 
-def income_query() -> pd.Series:
+def income_query() -> DataFrame:
     df_income: pd.DataFrame = account_query_to_df(["Income:*"])
     df_income["sum_position"] = (
         df_income["sum_position"] * -1
@@ -111,13 +174,13 @@ def income_query() -> pd.Series:
     return group_by_month(df_income, "income")
 
 
-def expenses_query() -> pd.Series:
+def expenses_query() -> DataFrame:
     df_expenses: pd.DataFrame = account_query_to_df(["Expenses:*"])
     df_expenses = df_expenses.rename(columns={"sum_position": "all_expenses"})
     return group_by_month(df_expenses, "all_expenses")
 
 
-def employment_expenses_query() -> pd.Series:
+def employment_expenses_query() -> DataFrame:
     df_employment_expenses: pd.DataFrame = account_query_to_df(
         ["Expenses:Employment:*"]
     )
@@ -166,7 +229,17 @@ def calculate_savings_rate() -> DataFrame:
     total_dataframe["saving_rate_gross"] = (
         total_dataframe["saving_amount_gross"] / total_dataframe["income"]
     )
-
+    total_dataframe.drop(
+        columns=[
+            "employment_expenses",
+            "income",
+            "all_expenses",
+            "saving_rate_gross",
+            "saving_amount_gross",
+            "saving_amount",
+            "income_after_tax"
+            ],
+        inplace=True)
     return total_dataframe
 
 

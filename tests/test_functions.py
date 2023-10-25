@@ -23,6 +23,22 @@ def expenses_df() -> DataFrame:
     }
     return pd.DataFrame(data)
 
+@pytest.fixture
+def balance_df() -> DataFrame:
+    """
+    Create a mock dataframe which would be output by Beancount
+    """
+    data: dict[str, Any] = {
+        "month": [3, 5],
+        "year": [2020, 2020],
+        "last_balance": [200.00, 15.10],
+        "account": [
+            "Expenses:Account:OtherSub",
+            "Expenses:Account:OtherSub",
+        ],
+    }
+    return pd.DataFrame(data)
+
 
 @pytest.fixture
 def expenses_datetime_df(expenses_df: DataFrame) -> DataFrame:
@@ -106,3 +122,30 @@ def test_fill_data_zero(expenses_datetime_df_merged: DataFrame) -> None:
     )
     zeroes: Series[bool] = expenses_datetime_df_merged["sum_position"] == 0
     assert zeroes.sum() == 33
+
+def test_balance_query_to_df(balance_df: DataFrame) -> None:
+    """
+    Test actual behaviour of function - that it pads, and balances are as expected
+    """
+    data: dict[str, Any] = {
+        "month": [1, 2, 3, 4, 5],
+        "year": [2020, 2020, 2020, 2020, 2020],
+        "last_balance": [0, 0, 200.00, 200.00, 15.10],
+        "account": [
+            "Expenses:Account:OtherSub",
+            "Expenses:Account:OtherSub",
+            "Expenses:Account:OtherSub",
+            "Expenses:Account:OtherSub",
+            "Expenses:Account:OtherSub"
+        ],
+    }
+    expected_df = pd.DataFrame(data)
+    expected_df = functions.convert_to_datetime(expected_df)
+    expected_df.set_index('date', inplace=True)
+    expected_df.reset_index(inplace=True)
+
+    balance_df = functions.convert_to_datetime(balance_df)
+    actual_df = functions.pad_balance(balance_df)
+    print("ACTUAL:", actual_df)
+    print(expected_df)
+    assert actual_df.equals(expected_df) == True

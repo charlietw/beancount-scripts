@@ -3,3 +3,6 @@ test:
 
 lint:
 	poetry run black .
+
+run:
+	poetry run python -m src.main

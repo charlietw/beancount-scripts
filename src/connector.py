@@ -1,4 +1,4 @@
-from influxdb_client import InfluxDBClient
+from influxdb_client import InfluxDBClient, Point
 from influxdb_client.client.write_api import SYNCHRONOUS
 import os
 from dotenv import load_dotenv
@@ -19,17 +19,24 @@ def clear_bucket(measurement: str, bucket_name: str):
     """
 
     client: InfluxDBClient = influx_client()
-    delete_api = client.delete_api()
     start = "2020-01-01T00:00:00Z"
     stop = "2030-01-01T00:00:00Z"
-    delete_api.delete(
+    client.delete_api().delete(
         start, stop, f'_measurement="{measurement}"', bucket=f"{bucket_name}", org="org"
     )
     client.close()
 
 
-def write_to_influx(df, bucket, measurement):
+def write_to_influx(df, bucket, measurement, fields, tags):
     client: InfluxDBClient = influx_client()
     write_api = client.write_api(write_options=SYNCHRONOUS)
-    write_api.write(bucket=bucket, record=df, data_frame_measurement_name=measurement)
+    for index, row in df.iterrows():
+        p: Point = Point(measurement)
+        for tag in tags:
+            p.tag(tag['tag_name'], tag['tag_value'])
+        for field in fields:
+            p.field(field, row[field])
+        p.time(row['date'])
+        write_api.write(bucket=bucket, record=p)
+    write_api.close()
     client.close()
