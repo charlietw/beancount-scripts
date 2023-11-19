@@ -145,7 +145,7 @@ def test_balance_query_to_df(balance_df: DataFrame) -> None:
     expected_df.reset_index(inplace=True)
 
     balance_df = functions.convert_to_datetime(balance_df)
-    actual_df = functions.pad_balance(balance_df)
+    actual_df = functions.pad_balance(balance_df,"2020-05-01")
     print("ACTUAL:", actual_df)
-    print(expected_df)
+    print("EXPECTED:", expected_df)
     assert actual_df.equals(expected_df) == True
