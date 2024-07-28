@@ -2,6 +2,7 @@ from influxdb_client import InfluxDBClient, Point
 from influxdb_client.client.write_api import SYNCHRONOUS
 import os
 from dotenv import load_dotenv
+from urllib3.exceptions import ReadTimeoutError
 
 
 def influx_client() -> InfluxDBClient:
@@ -20,10 +21,21 @@ def clear_bucket(measurement: str, bucket_name: str):
 
     client: InfluxDBClient = influx_client()
     start = "2020-01-01T00:00:00Z"
-    stop = "2030-01-01T00:00:00Z"
-    client.delete_api().delete(
-        start, stop, f'_measurement="{measurement}"', bucket=f"{bucket_name}", org="org"
-    )
+    stop = "2026-01-01T00:00:00Z"
+    attempts = 0
+    while True:
+        print("Emptying bucket...")
+        try:
+            client.delete_api().delete(
+                start, stop, f'_measurement="{measurement}"', bucket=f"{bucket_name}", org="org"
+            )
+            break
+        except ReadTimeoutError:
+            print("Timeout. Trying again...")
+        attempts += 1
+        if attempts == 5:
+            break
+
     client.close()
 
 

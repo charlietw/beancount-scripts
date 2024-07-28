@@ -99,11 +99,11 @@ def account_query_to_df(accounts: list[str]) -> pd.DataFrame:
         query_result_df[currency_column]
     )
     query_result_df = convert_to_datetime(query_result_df)
-    max_date: str = "2024-01-01"
+    max_date: str = "2025-01-01"
     return pad_dates(query_result_df, "2020-01-01", max_date)
 
 
-def pad_balance(query_result_df: DataFrame, max_date: str="2024-01-01") -> pd.DataFrame:
+def pad_balance(query_result_df: DataFrame, max_date: str="2025-01-01") -> pd.DataFrame:
     """
     Takes an account and pads out the balance so that there is an entry
     for each month

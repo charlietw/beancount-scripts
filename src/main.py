@@ -15,9 +15,9 @@ if __name__ == "__main__":
         "Assets:Investments:Crypto",
         "Assets:Property:6CommonRoad",
         "Liabilities:StudentLoan",
-        "Liabilities:Amex"
+        "Liabilities:Amex",
+        "Liabilities:Mortgage:6CommonRoad"
     ]
-    df: pd.DataFrame = functions.balance_query_to_df(["Assets:Investments:MoneyboxLISA"])
 
     connector.clear_bucket(measurement_name, bucket_name)
     # Upload savings rate data
