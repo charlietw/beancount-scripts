@@ -9,7 +9,7 @@ def influx_client() -> InfluxDBClient:
     token: str = os.environ["INFLUXDB_TOKEN"]
     host: str = os.environ["INFLUXDB_HOST"]
     org = "org"
-    client = InfluxDBClient(url=host, token=token, org=org, debug=False)
+    client = InfluxDBClient(url=host, token=token, org=org, debug=False, timeout=30_000)
     return client
 
 
